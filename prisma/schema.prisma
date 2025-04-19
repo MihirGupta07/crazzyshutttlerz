@@ -1,0 +1,112 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUser {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(CENTER_MANAGER)
+  centers   Center[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Center {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  location  String
+  contact   String
+  manager   AdminUser? @relation(fields: [managerId], references: [id])
+  managerId String?    @db.ObjectId
+  sessions  Session[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Player {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String    @unique
+  phone     String
+  level     Level     @default(BEGINNER)
+  status    Status    @default(ACTIVE)
+  wallet    Wallet?
+  bookings  Booking[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Wallet {
+  id           String             @id @default(auto()) @map("_id") @db.ObjectId
+  player       Player             @relation(fields: [playerId], references: [id])
+  playerId     String             @unique @db.ObjectId
+  balance      Float              @default(0)
+  transactions WalletTransaction[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+}
+
+model WalletTransaction {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  wallet    Wallet   @relation(fields: [walletId], references: [id])
+  walletId  String   @db.ObjectId
+  amount    Float
+  type      TransactionType
+  createdAt DateTime @default(now())
+}
+
+model Session {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  center     Center    @relation(fields: [centerId], references: [id])
+  centerId   String    @db.ObjectId
+  date       DateTime
+  time       String
+  price      Float
+  maxPlayers Int
+  bookings   Booking[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model Booking {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  session   Session  @relation(fields: [sessionId], references: [id])
+  sessionId String   @db.ObjectId
+  player    Player   @relation(fields: [playerId], references: [id])
+  playerId  String   @db.ObjectId
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  SUPER_ADMIN
+  CENTER_MANAGER
+}
+
+enum Level {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+}
